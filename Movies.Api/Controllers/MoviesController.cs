@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Mvc;
+
 namespace Movies.Api.Controllers;
 
-public class MoviesController
+[ApiController]
+public class MoviesController : ControllerBase
 {
     
 }
