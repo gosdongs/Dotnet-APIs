@@ -28,7 +28,7 @@ public class MoviesController : ControllerBase
         };
         
         var result = await _movieRepository.CreateAsync(movie);
-        
-        return Ok(movie);
+
+        return Created($"/api/movies/{movie.Id}", movie);
     }
 }
