@@ -37,4 +37,12 @@ public class MoviesController : ControllerBase
 
         return Ok(movie.MapToResponse());
     }
+
+    [HttpGet(ApiEndpoints.Movies.GetAll)]
+    public async Task<IActionResult> GetAll()
+    {
+        var movies = await _movieRepository.GetAllAsync();
+
+        return Ok(movies.MapToResponse());
+    }
 }
