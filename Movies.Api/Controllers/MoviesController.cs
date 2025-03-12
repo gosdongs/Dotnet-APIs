@@ -16,12 +16,25 @@ public class MoviesController : ControllerBase
     }
 
     [HttpPost(ApiEndpoints.Movies.Create)]
-    public async Task<IActionResult> Create([FromBody]CreateMovieRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateMovieRequest request)
     {
         var movie = request.MapToMovie();
         
         var result = await _movieRepository.CreateAsync(movie);
 
         return Created($"/{ApiEndpoints.Movies.Create}/{movie.Id}", movie);
+    }
+
+    [HttpGet(ApiEndpoints.Movies.Get)]
+    public async Task<IActionResult> Get([FromRoute] Guid id)
+    {
+        var movie = await _movieRepository.GetByIdAsync(id);
+
+        if (movie is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(movie.MapToResponse());
     }
 }
