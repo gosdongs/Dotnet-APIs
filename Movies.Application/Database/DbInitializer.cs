@@ -23,5 +23,13 @@ public class DbInitializer
                                           YearOfRelease INTEGER NOT NULL
                                       )
                                       """);
+
+        await connection.ExecuteAsync("""
+                                      CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS
+                                        Movies_Slug_Idx
+                                      ON
+                                        Movies
+                                      USING BTREE(Slug)
+                                      """);
     }
 }
