@@ -19,8 +19,8 @@ public class MovieRepository : IMovieRepository
         using var transaction = connection.BeginTransaction();
 
         var insertMovieCommandDefinition = new CommandDefinition("""
-                                                                 INSERT INTO Movies (Id, Slug, Title, YearOfRelease)
-                                                                 VALUES (@Id, @Slug, @Title, @YearOfRelease);
+                                                                 insert into movies (id, slug, title, yearofrelease)
+                                                                 values (@id, @slug, @title, @yearofrelease);
                                                                  """, movie);
         var result = await connection.ExecuteAsync(insertMovieCommandDefinition);
 
@@ -29,8 +29,8 @@ public class MovieRepository : IMovieRepository
             foreach (var genre in movie.Genres)
             {
                 var insertGenreCommandDefinition = new CommandDefinition("""
-                                                                         INSERT INTO Genres (MovieId, Name)
-                                                                         VALUES (@MovieId, @Name);
+                                                                         insert into genres (movieid, name)
+                                                                         values (@movieId, @name);
                                                                          """, new { MovieId = movie.Id, Name = genre });
                 await connection.ExecuteAsync(insertGenreCommandDefinition);
             }
@@ -41,9 +41,41 @@ public class MovieRepository : IMovieRepository
         return result > 0;
     }
 
-    public Task<Movie?> GetByIdAsync(Guid id)
+    public async Task<Movie?> GetByIdAsync(Guid id)
     {
-        throw new NotImplementedException();
+        using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+        
+        var getMovieCommandDefinition = new CommandDefinition("""
+                                                              select
+                                                                  *
+                                                              from
+                                                                  movies
+                                                              where
+                                                                  id = @id
+                                                              """, new { Id = id });
+        var movie = await connection.QuerySingleOrDefaultAsync<Movie>(getMovieCommandDefinition);
+        
+        if (movie is null)
+        {
+            return null;
+        }
+
+        var getGenresCommandDefinition = new CommandDefinition("""
+                                                               select
+                                                                   name
+                                                               from
+                                                                   genres
+                                                               where
+                                                                   movieid = @id
+                                                               """, new { Id = id });
+        var genres = await connection.QueryAsync<string>(getGenresCommandDefinition);
+
+        foreach (var genre in genres)
+        {
+            movie.Genres.Add(genre);
+        }
+        
+        return movie;
     }
 
     public Task<Movie?> GetBySlugAsync(string slug)

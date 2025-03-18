@@ -16,26 +16,26 @@ public class DbInitializer
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
 
         await connection.ExecuteAsync("""
-                                      CREATE TABLE IF NOT EXISTS Movies (
-                                          Id UUID PRIMARY KEY,
-                                          Slug TEXT NOT NULL,
-                                          Title TEXT NOT NULL,
-                                          YearOfRelease INTEGER NOT NULL
+                                      create table if not exists movies (
+                                          id uuid primary key,
+                                          slug text not null,
+                                          title text not null,
+                                          yearofrelease integer not null
                                       );
                                       """);
 
         await connection.ExecuteAsync("""
-                                      CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS
-                                        Movies_Slug_Idx
-                                      ON
-                                        Movies
-                                      USING BTREE(Slug);
+                                      create unique index concurrently if not exists
+                                          movies_slug_idx
+                                      on
+                                          movies
+                                      using btree(slug);
                                       """);
 
         await connection.ExecuteAsync("""
-                                      CREATE TABLE IF NOT EXISTS Genres (
-                                          MovieId UUID REFERENCES Movies (Id),
-                                          Name TEXT NOT NULL
+                                      create table if not exists genres (
+                                          movieid uuid references movies (id),
+                                          name text not null
                                       );
                                       """);
     }
