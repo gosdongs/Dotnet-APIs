@@ -21,7 +21,7 @@ public class DbInitializer
                                           Slug TEXT NOT NULL,
                                           Title TEXT NOT NULL,
                                           YearOfRelease INTEGER NOT NULL
-                                      )
+                                      );
                                       """);
 
         await connection.ExecuteAsync("""
@@ -29,7 +29,14 @@ public class DbInitializer
                                         Movies_Slug_Idx
                                       ON
                                         Movies
-                                      USING BTREE(Slug)
+                                      USING BTREE(Slug);
+                                      """);
+
+        await connection.ExecuteAsync("""
+                                      CREATE TABLE IF NOT EXISTS Genres (
+                                          MovieId UUID REFERENCES Movies (Id),
+                                          Name TEXT NOT NULL
+                                      );
                                       """);
     }
 }
