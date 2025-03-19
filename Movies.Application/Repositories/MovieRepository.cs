@@ -115,9 +115,29 @@ public class MovieRepository : IMovieRepository
         return movie;
     }
 
-    public Task<IEnumerable<Movie>> GetAllAsync()
+    public async Task<IEnumerable<Movie>> GetAllAsync()
     {
-        throw new NotImplementedException();
+        var connection = await _dbConnectionFactory.CreateConnectionAsync();
+
+        var getAllMoviesCommandDefinition = new CommandDefinition("""
+                                                                  select
+                                                                      m.*, string_agg(g.name, ',') as genres
+                                                                  from
+                                                                      movies m
+                                                                  left join
+                                                                      genres g on g.movieid = m.id
+                                                                  group by
+                                                                      m.id
+                                                                  """);
+        var result = await connection.QueryAsync(getAllMoviesCommandDefinition);
+
+        return result.Select(m => new Movie
+        {
+            Id = m.id,
+            Title = m.title,
+            YearOfRelease = m.yearofrelease,
+            Genres = Enumerable.ToList(m.genres.Split(','))
+        });
     }
 
     public Task<bool> UpdateAsync(Movie movie)
