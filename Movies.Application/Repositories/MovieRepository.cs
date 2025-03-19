@@ -180,7 +180,28 @@ public class MovieRepository : IMovieRepository
 
     public async Task<bool> DeleteByIdAsync(Guid id)
     {
-        throw new NotImplementedException();
+        using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+        using var transaction = connection.BeginTransaction();
+        
+        var deleteGenresCommandDefinition = new CommandDefinition("""
+                                                                  delete from
+                                                                      genres
+                                                                  where
+                                                                      movieid = @id
+                                                                  """, new { Id = id });
+        await connection.ExecuteAsync(deleteGenresCommandDefinition);
+
+        var deleteMovieCommandDefinition = new CommandDefinition("""
+                                                                 delete from
+                                                                     movies
+                                                                 where
+                                                                     id = @id
+                                                                 """, new { Id = id });
+        var result = await connection.ExecuteAsync(deleteMovieCommandDefinition);
+        
+        transaction.Commit();
+
+        return result > 0;
     }
 
     public async Task<bool> ExistsByIdAsync(Guid id)
