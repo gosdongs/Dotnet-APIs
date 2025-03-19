@@ -117,7 +117,7 @@ public class MovieRepository : IMovieRepository
 
     public async Task<IEnumerable<Movie>> GetAllAsync()
     {
-        var connection = await _dbConnectionFactory.CreateConnectionAsync();
+        using var connection = await _dbConnectionFactory.CreateConnectionAsync();
 
         var getAllMoviesCommandDefinition = new CommandDefinition("""
                                                                   select
@@ -140,18 +140,62 @@ public class MovieRepository : IMovieRepository
         });
     }
 
-    public Task<bool> UpdateAsync(Movie movie)
+    public async Task<bool> UpdateAsync(Movie movie)
+    {
+        using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+        using var transaction = connection.BeginTransaction();
+
+        var deleteGenresCommandDefinition = new CommandDefinition("""
+                                                                  delete from
+                                                                      genres
+                                                                  where
+                                                                      movieid = @id
+                                                                  """, new { Id = movie.Id });
+        await connection.ExecuteAsync(deleteGenresCommandDefinition);
+
+        foreach (var genre in movie.Genres)
+        {
+            var updateGenresCommandDefinition = new CommandDefinition("""
+                                                                      insert into
+                                                                          genres (movieid, name)
+                                                                      values (@movieid, @name)
+                                                                      """, new { MovieId = movie.Id, Name = genre });
+            await connection.ExecuteAsync(updateGenresCommandDefinition);
+        }
+
+        var updateCommandDefinition = new CommandDefinition("""
+                                                            update
+                                                                movies
+                                                            set
+                                                                slug = @slug, title = @title, yearofrelease = @yearofrelease
+                                                            where
+                                                                id = @id
+                                                            """, movie);
+        var result = await connection.ExecuteAsync(updateCommandDefinition);
+        
+        transaction.Commit();
+
+        return result > 0;
+    }
+
+    public async Task<bool> DeleteByIdAsync(Guid id)
     {
         throw new NotImplementedException();
     }
 
-    public Task<bool> DeleteByIdAsync(Guid id)
+    public async Task<bool> ExistsByIdAsync(Guid id)
     {
-        throw new NotImplementedException();
-    }
+        using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+        
+        var checkMovieExistenceCommandDefinition = new CommandDefinition("""
+                                                                         select
+                                                                             count(1)
+                                                                         from
+                                                                             movies
+                                                                         where
+                                                                             id = @id;
+                                                                         """, new { Id = id });
 
-    public Task<bool> ExistsByIdAsync(Guid id)
-    {
-        throw new NotImplementedException();
+        return await connection.ExecuteScalarAsync<bool>(checkMovieExistenceCommandDefinition);
     }
 }
